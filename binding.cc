@@ -1,6 +1,8 @@
 #if defined(_WIN32)
   #define WIN32_LEAN_AND_MEAN
   #include <Windows.h>
+#else
+  #include <dlfcn.h>
 #endif
 #include <assert.h>
 #include <bare.h>
@@ -11,17 +13,15 @@
 
 #if defined(_WIN32)
   #define DLLEXPORT __declspec(dllexport)
-  #define DLLIMPORT __declspec(dllimport)
 #else
-  #define DLLEXPORT 
-  #define DLLIMPORT 
+  #define DLLEXPORT
 #endif
 
 DLLEXPORT int addon_a_fn(void) {
   return 42;
 }
 
-void ErrorExit() {
+void error_exit() {
 #if defined(_WIN32)
   LPVOID lpMsgBuf;
   DWORD dw = GetLastError();
@@ -30,11 +30,11 @@ void ErrorExit() {
   if (FormatMessage(flags, NULL, dw, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL) == 0)
     std::cout << "Couldn't parse msg...\n";
 
-  std::wcout << "Parsed error message from LoadLibraryW(): " << (LPCTSTR)lpMsgBuf << "\n";
+  std::wcout << "LoadLibraryW(): " << (LPCTSTR)lpMsgBuf << "\n";
 
   LocalFree(lpMsgBuf);
 #else
-  std::cout << "An error occured while trying to load a library\n";
+  std::cout << "dlopen(): An error occured while trying to load a library\n";
 #endif
 }
 
@@ -63,11 +63,11 @@ open_library(js_env_t *env, js_callback_info_t *info) {
   #if defined(_WIN32)
     LoadLibraryW(wname.c_str());
   #else
-    dlopen(str.c_str());
+    dlopen(str.c_str(), RTLD_LAZY | RTLD_GLOBAL);
   #endif
 
   if (!handle)
-    ErrorExit();
+    error_exit();
   else
     std::cout << "Able to open the requested library.\n";
 

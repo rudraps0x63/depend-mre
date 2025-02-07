@@ -12,8 +12,12 @@
 
 DLLIMPORT int addon_a_fn(void);
 
+extern "C" {
+
 DLLEXPORT int callable(void) {
   return addon_a_fn();
+}
+
 }
 
 static js_value_t *
